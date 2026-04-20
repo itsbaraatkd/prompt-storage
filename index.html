@@ -1,0 +1,482 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Prompt Saver</title>
+    <link
+        href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Playfair+Display:wght@700;900&display=swap"
+        rel="stylesheet" />
+    <style>
+        *,
+        *::before,
+        *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        :root {
+            --bg: #0e0e0e;
+            --surface: #161616;
+            --border: #2a2a2a;
+            --accent: #e8d5a3;
+            --accent-dim: #b8a878;
+            --text: #f0ece0;
+            --muted: #6b6660;
+            --success: #7fb98a;
+            --error: #c97070;
+        }
+
+        body {
+            background: var(--bg);
+            color: var(--text);
+            font-family: 'DM Mono', monospace;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        /* Subtle grid background */
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background-image:
+                linear-gradient(rgba(232, 213, 163, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(232, 213, 163, 0.03) 1px, transparent 1px);
+            background-size: 40px 40px;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        /* Corner decoration */
+        body::after {
+            content: '// PROMPT_SAVER v1.0';
+            position: fixed;
+            top: 1.5rem;
+            right: 2rem;
+            font-size: 0.65rem;
+            color: var(--muted);
+            letter-spacing: 0.08em;
+            z-index: 1;
+        }
+
+        .container {
+            position: relative;
+            z-index: 1;
+            width: 100%;
+            max-width: 620px;
+        }
+
+        /* Header */
+        .header {
+            margin-bottom: 3rem;
+            animation: fadeDown 0.6s ease both;
+        }
+
+        .header-tag {
+            font-size: 0.65rem;
+            color: var(--accent);
+            letter-spacing: 0.2em;
+            text-transform: uppercase;
+            margin-bottom: 0.75rem;
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+        }
+
+        .header-tag::before {
+            content: '';
+            display: inline-block;
+            width: 20px;
+            height: 1px;
+            background: var(--accent);
+        }
+
+        h1 {
+            font-family: 'Playfair Display', serif;
+            font-size: clamp(2.5rem, 6vw, 3.8rem);
+            font-weight: 900;
+            line-height: 0.95;
+            letter-spacing: -0.02em;
+            color: var(--text);
+        }
+
+        h1 span {
+            color: var(--accent);
+        }
+
+        .subtitle {
+            margin-top: 0.75rem;
+            font-size: 0.72rem;
+            color: var(--muted);
+            letter-spacing: 0.05em;
+        }
+
+        /* Card */
+        .card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 2px;
+            padding: 2.5rem;
+            animation: fadeUp 0.6s 0.15s ease both;
+            position: relative;
+        }
+
+        /* Corner accents */
+        .card::before,
+        .card::after {
+            content: '';
+            position: absolute;
+            width: 16px;
+            height: 16px;
+            border-color: var(--accent);
+            border-style: solid;
+            opacity: 0.6;
+        }
+
+        .card::before {
+            top: -1px;
+            left: -1px;
+            border-width: 2px 0 0 2px;
+        }
+
+        .card::after {
+            bottom: -1px;
+            right: -1px;
+            border-width: 0 2px 2px 0;
+        }
+
+        /* Form */
+        .field {
+            margin-bottom: 1.75rem;
+        }
+
+        label {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.65rem;
+            letter-spacing: 0.15em;
+            text-transform: uppercase;
+            color: var(--accent-dim);
+            margin-bottom: 0.65rem;
+        }
+
+        label .num {
+            color: var(--muted);
+            font-size: 0.6rem;
+        }
+
+        input[type="text"],
+        textarea {
+            width: 100%;
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 2px;
+            color: var(--text);
+            font-family: 'DM Mono', monospace;
+            font-size: 0.85rem;
+            padding: 0.85rem 1rem;
+            outline: none;
+            transition: border-color 0.2s, box-shadow 0.2s;
+            resize: none;
+        }
+
+        input[type="text"]::placeholder,
+        textarea::placeholder {
+            color: var(--muted);
+            opacity: 0.6;
+        }
+
+        input[type="text"]:focus,
+        textarea:focus {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px rgba(232, 213, 163, 0.06);
+        }
+
+        textarea {
+            height: 180px;
+            line-height: 1.6;
+        }
+
+        /* Char counter */
+        .field-meta {
+            display: flex;
+            justify-content: flex-end;
+            margin-top: 0.4rem;
+        }
+
+        .char-count {
+            font-size: 0.6rem;
+            color: var(--muted);
+            letter-spacing: 0.05em;
+        }
+
+        /* Button */
+        .btn {
+            width: 100%;
+            padding: 1rem;
+            background: var(--accent);
+            color: #0e0e0e;
+            border: none;
+            border-radius: 2px;
+            font-family: 'DM Mono', monospace;
+            font-size: 0.75rem;
+            font-weight: 500;
+            letter-spacing: 0.15em;
+            text-transform: uppercase;
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+            transition: background 0.2s, transform 0.1s;
+        }
+
+        .btn:hover {
+            background: #f0e0b0;
+        }
+
+        .btn:active {
+            transform: scale(0.99);
+        }
+
+        .btn::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: rgba(255, 255, 255, 0.15);
+            transform: translateX(-100%);
+            transition: transform 0.4s ease;
+        }
+
+        .btn:hover::before {
+            transform: translateX(100%);
+        }
+
+        .btn-inner {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.6rem;
+        }
+
+        .btn-icon {
+            font-size: 1rem;
+        }
+
+        /* Toast */
+        .toast {
+            position: fixed;
+            bottom: 2rem;
+            left: 50%;
+            transform: translateX(-50%) translateY(20px);
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-left: 3px solid var(--success);
+            padding: 0.75rem 1.25rem;
+            font-size: 0.72rem;
+            color: var(--success);
+            letter-spacing: 0.08em;
+            border-radius: 2px;
+            opacity: 0;
+            transition: opacity 0.3s, transform 0.3s;
+            white-space: nowrap;
+            z-index: 100;
+            pointer-events: none;
+        }
+
+        .toast.error {
+            border-left-color: var(--error);
+            color: var(--error);
+        }
+
+        .toast.show {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
+        }
+
+        /* Footer line */
+        .footer-line {
+            margin-top: 1.5rem;
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.6rem;
+            color: var(--muted);
+            letter-spacing: 0.06em;
+            animation: fadeUp 0.6s 0.3s ease both;
+        }
+
+        /* Animations */
+        @keyframes fadeDown {
+            from {
+                opacity: 0;
+                transform: translateY(-16px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes fadeUp {
+            from {
+                opacity: 0;
+                transform: translateY(16px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="container">
+        <div class="header">
+            <div class="header-tag">Tool</div>
+            <h1>Prompt<br /><span>Saver</span></h1>
+            <p class="subtitle">// save your prompts as .txt files instantly</p>
+        </div>
+
+        <div class="card">
+            <div class="field">
+                <label>
+                    <span class="num">01 —</span> Prompt Title
+                </label>
+                <input type="text" id="title" placeholder="e.g. summarize-article" maxlength="100" />
+            </div>
+
+            <div class="field">
+                <label>
+                    <span class="num">02 —</span> Prompt Content
+                </label>
+                <textarea id="content" placeholder="Write your prompt here..."></textarea>
+                <div class="field-meta">
+                    <span class="char-count" id="charCount">0 chars</span>
+                </div>
+            </div>
+
+            <button class="btn" onclick="generate()">
+                <span class="btn-inner">
+                    <span class="btn-icon">↓</span>
+                    Generate .txt File
+                </span>
+            </button>
+        </div>
+
+        <div class="footer-line">
+            <span>PROMPT_SAVER</span>
+            <span>OUTPUT → .txt</span>
+        </div>
+    </div>
+
+    <div class="toast" id="toast"></div>
+
+    <script>
+        // Char counter
+        const contentEl = document.getElementById('content');
+        const charCountEl = document.getElementById('charCount');
+
+        contentEl.addEventListener('input', () => {
+            const len = contentEl.value.length;
+            charCountEl.textContent = `${len.toLocaleString()} char${len !== 1 ? 's' : ''}`;
+        });
+
+        // Toast
+        function showToast(msg, type = 'success') {
+            const toast = document.getElementById('toast');
+            toast.textContent = msg;
+            toast.className = `toast ${type} show`;
+            setTimeout(() => { toast.className = 'toast'; }, 2800);
+        }
+
+        let projectDirHandle = null;
+
+        // Generate file
+        async function generate() {
+            const title = document.getElementById('title').value.trim();
+            const content = document.getElementById('content').value.trim();
+
+            if (!title) {
+                showToast('⚠ Please enter a prompt title.', 'error');
+                document.getElementById('title').focus();
+                return;
+            }
+
+            if (!content) {
+                showToast('⚠ Please enter prompt content.', 'error');
+                document.getElementById('content').focus();
+                return;
+            }
+
+            // Use Unicode property escapes (\p{L} for all letters, \p{N} for all numbers)
+            // This safely keeps Arabic text and any other language
+            const sanitized = title
+                .replace(/[^\p{L}\p{N}\-_ ]/gu, '')
+                .replace(/\s+/g, '-')
+                .replace(/-+/g, '-')
+                .replace(/^-|-$/g, '')
+                || 'prompt';
+
+            try {
+                // Modern browsers: ask for project folder and save directly to "prompts" directory
+                if (window.showDirectoryPicker) {
+                    if (!projectDirHandle) {
+                        // Request the user to select the root folder of the project
+                        alert("To save directly to the 'prompts' folder, please select this project's main folder in the next dialog.");
+                        projectDirHandle = await window.showDirectoryPicker({ mode: 'readwrite' });
+                    }
+                    
+                    // Get or create the "prompts" directory inside the selected folder
+                    const promptsDirHandle = await projectDirHandle.getDirectoryHandle('prompts', { create: true });
+                    
+                    // Create the .txt file
+                    const fileHandle = await promptsDirHandle.getFileHandle(`${sanitized}.txt`, { create: true });
+                    const writable = await fileHandle.createWritable();
+                    await writable.write(content);
+                    await writable.close();
+                    
+                    showToast(`✓ Saved as "prompts/${sanitized}.txt"`);
+                    return; // exit early on success
+                }
+            } catch (err) {
+                console.error('File saving error:', err);
+                // If user aborted the folder picker, we stop.
+                if (err.name === 'AbortError') return;
+            }
+
+            // Fallback for older browsers or if API fails
+            const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `${sanitized}.txt`;
+            a.click();
+            URL.revokeObjectURL(url);
+
+            showToast(`✓ Downloaded "${sanitized}.txt" (Fallback)`);
+        }
+
+        // Enter key on title → focus content
+        document.getElementById('title').addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') { e.preventDefault(); contentEl.focus(); }
+        });
+
+        // Ctrl+Enter to generate
+        document.addEventListener('keydown', (e) => {
+            if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') generate();
+        });
+    </script>
+</body>
+
+</html>
